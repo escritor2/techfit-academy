@@ -24,5 +24,34 @@ class DatabaseSeeder extends Seeder
                 'role' => 'admin'
             ]
         );
+
+        // Cria a Recepcionista
+        User::firstOrCreate(
+            ['email' => 'recepcao@techfit.com'],
+            [
+                'name' => 'Recepcionista',
+                'password' => bcrypt('123456'),
+                'role' => 'employee'
+            ]
+        );
+
+        // Cria o Aluno
+        $aluno = User::firstOrCreate(
+            ['email' => 'aluno@techfit.com'],
+            [
+                'name' => 'Aluno Fit',
+                'password' => bcrypt('123456'),
+                'role' => 'member'
+            ]
+        );
+
+        // Cria uma compra de teste para o aluno para não ficar vazio no painel
+        \App\Models\Sale::firstOrCreate(
+            ['user_id' => $aluno->id],
+            [
+                'total_price' => 149.90,
+                'status' => 'paid'
+            ]
+        );
     }
 }
