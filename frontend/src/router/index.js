@@ -7,6 +7,7 @@ import EmployeeView from '../views/EmployeeView.vue'
 import MemberView from '../views/MemberView.vue'
 import StoreView from '../views/StoreView.vue'
 import AIView from '../views/AIView.vue'
+import ProfileView from '../views/ProfileView.vue'
 
 const routes = [
   { path: '/', component: HomeView },
@@ -29,6 +30,11 @@ const routes = [
     path: '/painel', 
     component: MemberView, 
     meta: { requiresAuth: true, role: 'member' } 
+  },
+  {
+    path: '/perfil',
+    component: ProfileView,
+    meta: { requiresAuth: true }
   }
 ]
 
