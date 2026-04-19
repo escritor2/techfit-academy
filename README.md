@@ -1,6 +1,6 @@
 # 🏋️‍♂️ TechFit Gym Management System
 
-![TechFit Banner](https://via.placeholder.com/1200x300/0a0a0a/00f2ff?text=TechFit+-+A+Evolu%C3%A7%C3%A3o+do+Seu+Treino)
+![TechFit Banner](https://placehold.co/1200x300/111111/00f2ff/png?text=TECH+FIT%0AGym+Management+System&font=Montserrat)
 
 > Sistema completo para gestão de academias focado em alta tecnologia, inteligência artificial e alta performance.
 
@@ -108,4 +108,5 @@ O visual do sistema foi feito sob medida para transmitir velocidade e alta tecno
 - Efeitos Glassmorphism: Cards transparentes com bordas luminosas usando `backdrop-filter: blur()`.
 - Micro-animações suaves em todos os botões e transições de tela.
 
-
+---
+*Feito com 🩵 para elevar o padrão do mundo fitness.*
