@@ -15,11 +15,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Cria o Administrador automaticamente se ele não existir
+        User::firstOrCreate(
+            ['email' => 'admin@techfit.com'],
+            [
+                'name' => 'Admin TechFit',
+                'password' => bcrypt('123456'),
+                'role' => 'admin'
+            ]
+        );
     }
 }
