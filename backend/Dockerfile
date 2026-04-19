@@ -26,3 +26,6 @@ RUN touch database/database.sqlite
 
 # Inicia rodando as migrations, insere o usuário padrão (--seed) e liga o servidor
 CMD php artisan migrate --seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+# Inicia rodando as migrations e depois liga o servidor (Tudo na hora do Start para conseguir ler as Variáveis de Ambiente)
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+
