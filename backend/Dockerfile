@@ -20,8 +20,8 @@ COPY . .
 # Instala as dependências do Laravel
 RUN composer install --no-dev --optimize-autoloader
 
-# Cria o arquivo do banco de dados e roda as migrations
-RUN touch database/database.sqlite && php artisan migrate --force
+# Cria o arquivo SQLite vazio (se não existir)
+RUN touch database/database.sqlite
 
-# Inicia o servidor embutido do Laravel usando a porta que o Render fornecer
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+# Inicia rodando as migrations e depois liga o servidor (Tudo na hora do Start para conseguir ler as Variáveis de Ambiente)
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
