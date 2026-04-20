@@ -8,42 +8,79 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lista todos os produtos (público).
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Product::all();
+        $query = Product::query();
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        return response()->json($query->orderBy('name')->get());
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Cria novo produto (admin).
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name'           => 'required|string|max:255',
+            'category'       => 'nullable|string|max:100',
+            'description'    => 'nullable|string',
+            'price'          => 'required|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
+            'image_url'      => 'nullable|string|max:500',
+        ]);
+
+        $product = Product::create($request->all());
+
+        return response()->json($product, 201);
     }
 
     /**
-     * Display the specified resource.
+     * Exibe um produto específico.
      */
     public function show(string $id)
     {
-        //
+        return response()->json(Product::findOrFail($id));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Atualiza produto (admin).
      */
     public function update(Request $request, string $id)
     {
-        //
+        $product = Product::findOrFail($id);
+
+        $request->validate([
+            'name'           => 'sometimes|string|max:255',
+            'category'       => 'nullable|string|max:100',
+            'description'    => 'nullable|string',
+            'price'          => 'sometimes|numeric|min:0',
+            'stock_quantity' => 'sometimes|integer|min:0',
+            'image_url'      => 'nullable|string|max:500',
+        ]);
+
+        $product->update($request->all());
+
+        return response()->json($product);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove produto (admin).
      */
     public function destroy(string $id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $product->delete();
+
+        return response()->json(['message' => 'Produto removido com sucesso.']);
     }
 }

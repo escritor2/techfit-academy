@@ -4,18 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Sale extends Model
+class Checkin extends Model
 {
     protected $fillable = [
         'user_id',
-        'total_price',
-        'status',
+        'checked_in_by',
+        'checked_in_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'total_price' => 'decimal:2',
+            'checked_in_at' => 'datetime',
         ];
     }
 
@@ -24,13 +24,8 @@ class Sale extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function items()
+    public function checkedInBy()
     {
-        return $this->hasMany(SaleItem::class);
-    }
-
-    public function scopePaid($query)
-    {
-        return $query->where('status', 'paid');
+        return $this->belongsTo(User::class, 'checked_in_by');
     }
 }

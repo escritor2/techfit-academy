@@ -3,77 +3,92 @@
     <h2 class="text-gradient section-title">Loja Techfit</h2>
     <p class="store-subtitle">Suplementos, roupas e acessórios para potencializar seus resultados</p>
 
-    <div class="product-grid">
-      <div v-for="product in products" :key="product.id" class="glass-card product-card">
+    <!-- Filtros de categoria -->
+    <div class="filter-bar">
+      <button 
+        v-for="cat in categories" :key="cat"
+        :class="['filter-btn', { active: activeCategory === cat }]"
+        @click="activeCategory = cat"
+      >
+        {{ cat }}
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="loading-state text-muted">
+      Carregando produtos...
+    </div>
+
+    <!-- Product Grid -->
+    <div v-else class="product-grid">
+      <div v-for="product in filteredProducts" :key="product.id" class="glass-card product-card">
         <div class="product-image">
-          <img :src="product.image" :alt="product.name" />
+          <img :src="product.image_url || 'https://via.placeholder.com/400x250'" :alt="product.name" />
           <span class="product-badge">{{ product.category }}</span>
+          <span v-if="product.stock_quantity <= 5 && product.stock_quantity > 0" class="stock-badge low">
+            Últimas {{ product.stock_quantity }} un.
+          </span>
+          <span v-if="product.stock_quantity === 0" class="stock-badge out">
+            Esgotado
+          </span>
         </div>
         <div class="product-info">
           <h3>{{ product.name }}</h3>
           <p class="product-desc">{{ product.description }}</p>
           <div class="product-footer">
-            <div class="price">R$ {{ product.price }}</div>
-            <button class="btn-primary cart-btn" @click="addToCart(product)">
-              <span>🛒</span> Ao Carrinho
+            <div class="price">R$ {{ parseFloat(product.price).toFixed(2).replace('.', ',') }}</div>
+            <button 
+              class="btn-primary cart-btn" 
+              @click="addToCart(product)"
+              :disabled="product.stock_quantity === 0"
+            >
+              <span>🛒</span> {{ product.stock_quantity === 0 ? 'Esgotado' : 'Comprar' }}
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Toast de confirmação -->
-    <div class="toast" :class="{ show: toast.show }">
-      ✅ {{ toast.message }}
+    <div v-if="!loading && filteredProducts.length === 0" class="empty-state">
+      <p class="text-muted">Nenhum produto encontrado nesta categoria.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+import { useCartStore } from '../stores/cartStore'
 
-const toast = ref({ show: false, message: '' });
+const cartStore = useCartStore()
+const products = ref([])
+const loading = ref(true)
+const activeCategory = ref('Todos')
 
-const products = ref([
-  {
-    id: 1,
-    name: 'Whey Protein 1kg',
-    category: 'Suplementos',
-    description: 'Proteína de alta qualidade para ganho muscular rápido.',
-    price: '149,90',
-    image: '/products/whey.png'
-  },
-  {
-    id: 2,
-    name: 'Creatina 300g',
-    category: 'Suplementos',
-    description: 'Aumento de força e resistência para treinos intensos.',
-    price: '89,90',
-    image: '/products/creatina.png'
-  },
-  {
-    id: 3,
-    name: 'Camiseta Techfit',
-    category: 'Vestuário',
-    description: 'Tecido dry-fit com tecnologia de absorção de suor.',
-    price: '59,90',
-    image: '/products/camiseta.png'
-  },
-  {
-    id: 4,
-    name: 'Garrafa 1L',
-    category: 'Acessórios',
-    description: 'Garrafa premium com marcação de volume e tampa flip.',
-    price: '35,00',
-    image: '/products/garrafa.png'
-  },
-]);
+const categories = computed(() => {
+  const cats = [...new Set(products.value.map(p => p.category).filter(Boolean))]
+  return ['Todos', ...cats]
+})
+
+const filteredProducts = computed(() => {
+  if (activeCategory.value === 'Todos') return products.value
+  return products.value.filter(p => p.category === activeCategory.value)
+})
 
 function addToCart(product) {
-  toast.value.message = `${product.name} adicionado ao carrinho!`;
-  toast.value.show = true;
-  setTimeout(() => { toast.value.show = false; }, 3000);
+  cartStore.addItem(product)
 }
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('/products')
+    products.value = response.data
+  } catch (error) {
+    console.error('Erro ao carregar produtos', error)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -82,22 +97,64 @@ function addToCart(product) {
   max-width: 1400px;
   margin: 0 auto;
 }
+
 .section-title {
   font-size: 3rem;
   margin-bottom: 0.5rem;
   text-align: center;
 }
+
 .store-subtitle {
   text-align: center;
   color: var(--text-muted);
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   font-size: 1rem;
 }
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 0.5rem 1.2rem;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.filter-btn.active {
+  background: rgba(0, 242, 255, 0.15);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.loading-state {
+  text-align: center;
+  padding: 4rem 0;
+  font-size: 1.1rem;
+}
+
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2rem;
 }
+
 .product-card {
   padding: 0;
   overflow: hidden;
@@ -105,25 +162,30 @@ function addToCart(product) {
   flex-direction: column;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
 .product-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
 }
+
 .product-image {
   position: relative;
   width: 100%;
   height: 220px;
   overflow: hidden;
 }
+
 .product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.4s ease;
 }
+
 .product-card:hover .product-image img {
   transform: scale(1.05);
 }
+
 .product-badge {
   position: absolute;
   top: 12px;
@@ -139,17 +201,43 @@ function addToCart(product) {
   letter-spacing: 1px;
   backdrop-filter: blur(6px);
 }
+
+.stock-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+}
+
+.stock-badge.low {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #f59e0b;
+  color: #fbbf24;
+}
+
+.stock-badge.out {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #f87171;
+}
+
 .product-info {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
+
 .product-info h3 {
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
+
 .product-desc {
   color: var(--text-muted);
   font-size: 0.85rem;
@@ -157,17 +245,20 @@ function addToCart(product) {
   margin-bottom: 1.5rem;
   flex: 1;
 }
+
 .product-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
+
 .price {
   font-size: 1.4rem;
   font-weight: 900;
   color: var(--accent-secondary);
 }
+
 .cart-btn {
   padding: 0.6rem 1.2rem;
   font-size: 0.85rem;
@@ -176,24 +267,14 @@ function addToCart(product) {
   gap: 0.4rem;
   white-space: nowrap;
 }
-.toast {
-  position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: rgba(0, 242, 255, 0.1);
-  border: 1px solid var(--accent-primary);
-  color: #fff;
-  padding: 1rem 2rem;
-  border-radius: 50px;
-  font-weight: 600;
-  backdrop-filter: blur(20px);
-  transition: transform 0.4s ease, opacity 0.4s ease;
-  opacity: 0;
-  z-index: 1000;
+
+.cart-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
-.toast.show {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 0;
 }
 </style>

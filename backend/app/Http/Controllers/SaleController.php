@@ -2,47 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Histórico de vendas do usuário logado.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $sales = Sale::where('user_id', $request->user()->id)
+            ->with('items.product:id,name,image_url')
+            ->orderBy('created_at', 'desc')
+            ->take(20)
+            ->get();
+
+        return response()->json($sales);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Cria uma venda com itens e decrementa estoque.
      */
     public function store(Request $request)
     {
-        //
-    }
+        $request->validate([
+            'items'              => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity'   => 'required|integer|min:1',
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        return DB::transaction(function () use ($request) {
+            $totalPrice = 0;
+            $itemsData = [];
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+            foreach ($request->items as $item) {
+                $product = Product::findOrFail($item['product_id']);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+                if ($product->stock_quantity < $item['quantity']) {
+                    return response()->json([
+                        'message' => "Estoque insuficiente para: {$product->name}. Disponível: {$product->stock_quantity}"
+                    ], 422);
+                }
+
+                $subtotal = $product->price * $item['quantity'];
+                $totalPrice += $subtotal;
+
+                $itemsData[] = [
+                    'product_id' => $product->id,
+                    'quantity'   => $item['quantity'],
+                    'unit_price' => $product->price,
+                ];
+
+                // Decrementa estoque
+                $product->decrement('stock_quantity', $item['quantity']);
+            }
+
+            $sale = Sale::create([
+                'user_id'     => $request->user()->id,
+                'total_price' => $totalPrice,
+                'status'      => 'paid',
+            ]);
+
+            foreach ($itemsData as $itemData) {
+                $sale->items()->create($itemData);
+            }
+
+            return response()->json(
+                $sale->load('items.product:id,name'),
+                201
+            );
+        });
     }
 }
