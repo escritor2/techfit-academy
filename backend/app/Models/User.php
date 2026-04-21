@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,10 +12,13 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    use BelongsToTenant;
+
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'email',
         'password',
@@ -72,6 +77,23 @@ class User extends Authenticatable
     public function classBookings()
     {
         return $this->hasMany(ClassBooking::class);
+    }
+
+    public function bodyMetrics()
+    {
+        return $this->hasMany(BodyMetric::class)->orderBy('measured_at', 'desc');
+    }
+
+    public function achievements()
+    {
+        return $this->belongsToMany(Achievement::class, 'user_achievements')
+                    ->withPivot('earned_at')
+                    ->withTimestamps();
+    }
+
+    public function diets()
+    {
+        return $this->hasMany(Diet::class)->latest();
     }
 
     // ── Scopes ──

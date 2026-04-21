@@ -15,4 +15,20 @@ app.use(router)
 const authStore = useAuthStore()
 authStore.initializeAuth()
 
+// Scroll Reveal Logic
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('active');
+    }
+  });
+}, { threshold: 0.1 });
+
+app.directive('reveal', {
+  mounted(el) {
+    el.classList.add('reveal');
+    revealObserver.observe(el);
+  }
+});
+
 app.mount('#app')

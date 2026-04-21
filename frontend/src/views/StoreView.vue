@@ -14,9 +14,9 @@
       </button>
     </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="loading-state text-muted">
-      Carregando produtos...
+    <!-- Loading Skeleton -->
+    <div v-if="loading" style="padding: 2rem 0;">
+      <SkeletonLoader variant="card" :count="4" />
     </div>
 
     <!-- Product Grid -->
@@ -59,6 +59,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useCartStore } from '../stores/cartStore'
+import SkeletonLoader from '../components/SkeletonLoader.vue'
 
 const cartStore = useCartStore()
 const products = ref([])

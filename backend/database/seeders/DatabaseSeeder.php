@@ -9,6 +9,8 @@ use App\Models\Subscription;
 use App\Models\GymClass;
 use App\Models\Sale;
 use App\Models\Checkin;
+use App\Models\Achievement;
+use App\Models\Tenant;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -22,6 +24,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // ═══════════════════════════════════════
+        // TENANTS (Academias)
+        // ═══════════════════════════════════════
+        $tenant = Tenant::firstOrCreate(
+            ['domain' => 'app.techfit.com'],
+            [
+                'name' => 'TechFit Academy (Matriz)',
+                'settings' => json_encode(['primary_color' => '#00f2ff', 'logo_url' => '']),
+                'is_active' => true,
+            ]
+        );
+
+        // Define o tenant atual para que as models recebam o tenant_id via trait
+        session(['tenant_id' => $tenant->id]);
+
         // ═══════════════════════════════════════
         // USUÁRIOS
         // ═══════════════════════════════════════
@@ -143,66 +160,66 @@ class DatabaseSeeder extends Seeder
         // PRODUTOS
         // ═══════════════════════════════════════
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['name' => 'Whey Protein 1kg'],
             [
                 'category'       => 'Suplementos',
-                'description'    => 'Proteína de alta qualidade para ganho muscular rápido. Sabor chocolate.',
+                'description'    => 'Proteína Premium Techfit. Pureza máxima e sabor chocolate belga.',
                 'price'          => 149.90,
                 'stock_quantity' => 25,
-                'image_url'      => 'https://images.unsplash.com/photo-1593095948071-474c5cc2c2b0?w=400&h=300&fit=crop',
+                'image_url'      => '/products/whey.png',
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['name' => 'Creatina 300g'],
             [
                 'category'       => 'Suplementos',
-                'description'    => 'Aumento de força e resistência para treinos intensos. Monohidratada.',
+                'description'    => 'Creatina Monohidratada Techfit. Força bruta e recuperação rápida.',
                 'price'          => 89.90,
                 'stock_quantity' => 40,
-                'image_url'      => 'https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=400&h=300&fit=crop',
+                'image_url'      => '/products/creatina.png',
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['name' => 'Camiseta Techfit Dry-Fit'],
             [
                 'category'       => 'Vestuário',
-                'description'    => 'Tecido dry-fit com tecnologia de absorção de suor. Conforto máximo.',
+                'description'    => 'Regata Techfit Black Edition. Tecido ultra-leve para performance extrema.',
                 'price'          => 59.90,
                 'stock_quantity' => 50,
-                'image_url'      => 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=300&fit=crop',
+                'image_url'      => '/products/camiseta.png',
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['name' => 'Garrafa Premium 1L'],
             [
                 'category'       => 'Acessórios',
-                'description'    => 'Garrafa premium com marcação de volume e tampa flip. Livre de BPA.',
+                'description'    => 'Shaker Techfit Black Stealth. Minimalista, 1L de pura hidratação.',
                 'price'          => 35.00,
                 'stock_quantity' => 60,
-                'image_url'      => 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop',
+                'image_url'      => '/products/garrafa.png',
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['name' => 'Luva de Treino Pro'],
             [
                 'category'       => 'Acessórios',
-                'description'    => 'Luva acolchoada com suporte de pulso. Ideal para musculação pesada.',
+                'description'    => 'Luvas Techfit Grip Pro. Proteção e aderência para treinos pesados.',
                 'price'          => 45.90,
                 'stock_quantity' => 30,
-                'image_url'      => 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=300&fit=crop',
+                'image_url'      => 'https://images.unsplash.com/photo-1599058917232-d750c1859d7c?w=400&h=300&fit=crop',
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['name' => 'Barra de Proteína (cx 12un)'],
             [
                 'category'       => 'Suplementos',
-                'description'    => 'Caixa com 12 barras de proteína. Sabores variados. Lanche pós-treino perfeito.',
+                'description'    => 'Techfit Protein Bar Black. O lanche perfeito para sua rotina de elite.',
                 'price'          => 79.90,
                 'stock_quantity' => 35,
                 'image_url'      => 'https://images.unsplash.com/photo-1622484212850-eb596d769edc?w=400&h=300&fit=crop',
@@ -288,6 +305,50 @@ class DatabaseSeeder extends Seeder
             ['user_id' => $aluno->id, 'checked_in_at' => Carbon::today()->setTime(7, 30)],
             [
                 'checked_in_by' => $employee->id,
+            ]
+        );
+
+        // ═══════════════════════════════════════
+        // CONQUISTAS
+        // ═══════════════════════════════════════
+
+        Achievement::firstOrCreate(
+            ['name' => 'Primeiro Passo'],
+            [
+                'description' => 'Realizou seu primeiro check-in na academia.',
+                'icon' => '👟',
+                'type' => 'checkin_count',
+                'required_value' => 1,
+            ]
+        );
+
+        Achievement::firstOrCreate(
+            ['name' => 'Frequentador Assíduo'],
+            [
+                'description' => 'Completou 10 check-ins.',
+                'icon' => '🔥',
+                'type' => 'checkin_count',
+                'required_value' => 10,
+            ]
+        );
+
+        Achievement::firstOrCreate(
+            ['name' => 'Rato de Academia'],
+            [
+                'description' => 'Completou 30 check-ins.',
+                'icon' => '🐭',
+                'type' => 'checkin_count',
+                'required_value' => 30,
+            ]
+        );
+
+        Achievement::firstOrCreate(
+            ['name' => 'Mestre da Estratégia'],
+            [
+                'description' => 'Gerou 5 treinos com IA.',
+                'icon' => '🧠',
+                'type' => 'workout_count',
+                'required_value' => 5,
             ]
         );
     }

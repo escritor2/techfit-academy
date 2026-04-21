@@ -1,13 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
-import HomeView from '../views/HomeView.vue'
-import LoginView from '../views/LoginView.vue'
-import AdminView from '../views/AdminView.vue'
-import EmployeeView from '../views/EmployeeView.vue'
-import MemberView from '../views/MemberView.vue'
-import StoreView from '../views/StoreView.vue'
-import AIView from '../views/AIView.vue'
-import ProfileView from '../views/ProfileView.vue'
+
+// ═══════════════════════════════════════════
+// LAZY LOADING — Cada view é carregada apenas quando acessada
+// Reduz o bundle inicial drasticamente para melhor performance na Vercel
+// ═══════════════════════════════════════════
+
+const HomeView      = () => import('../views/HomeView.vue')
+const LoginView     = () => import('../views/LoginView.vue')
+const AdminView     = () => import('../views/AdminView.vue')
+const EmployeeView  = () => import('../views/EmployeeView.vue')
+const MemberView    = () => import('../views/MemberView.vue')
+const StoreView     = () => import('../views/StoreView.vue')
+const AIView        = () => import('../views/AIView.vue')
+const ProfileView   = () => import('../views/ProfileView.vue')
+const MetricsView   = () => import('../views/MetricsView.vue')
+const NutritionView = () => import('../views/NutritionView.vue')
+const RankingView   = () => import('../views/RankingView.vue')
+const PlansView     = () => import('../views/PlansView.vue')
 
 const routes = [
   { path: '/', component: HomeView },
@@ -35,12 +45,41 @@ const routes = [
     path: '/perfil',
     component: ProfileView,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/metricas',
+    name: 'metrics',
+    component: MetricsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/nutricao',
+    name: 'nutrition',
+    component: NutritionView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/ranking',
+    name: 'ranking',
+    component: RankingView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/planos',
+    name: 'plans',
+    component: PlansView,
+    meta: { requiresAuth: true }
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // Retorna ao topo ao navegar para nova página
+    if (savedPosition) return savedPosition
+    return { top: 0, behavior: 'smooth' }
+  }
 })
 
 // Guarda de Rotas (Proteção)

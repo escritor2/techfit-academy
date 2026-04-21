@@ -11,7 +11,9 @@
       </router-link>
     </header>
 
-    <div v-if="loading" class="loading-state text-muted">Carregando seu painel...</div>
+    <div v-if="loading" style="padding: 2rem 0;">
+      <SkeletonLoader variant="stat" :count="4" />
+    </div>
 
     <div v-else class="dashboard-grid">
 
@@ -35,6 +37,14 @@
         <h3>💳 Meu Plano</h3>
         <div v-if="subscription" class="plan-display">
           <div class="plan-badge active">✅ {{ subscription.plan?.name || 'Plano Ativo' }}</div>
+          <div class="glass-card stat-card">
+            <span class="stat-icon">⚖️</span>
+            <div>
+              <p class="stat-label">Peso Atual</p>
+              <p class="stat-value">{{ authStore.user?.body_metrics?.[0]?.weight || '--' }} kg</p>
+              <router-link to="/metricas" class="stat-link">Ver medidas →</router-link>
+            </div>
+          </div>
           <div class="plan-details">
             <div class="plan-item">
               <span class="text-muted">Tipo</span>
@@ -129,6 +139,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
+import SkeletonLoader from '../components/SkeletonLoader.vue'
 import axios from 'axios'
 
 const authStore = useAuthStore()
@@ -262,4 +273,25 @@ onMounted(async () => {
 .available-classes { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem; }
 .class-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
 .spots-badge { margin-left: 0.5rem; background: rgba(0,242,255,0.1); color: var(--accent-primary); padding: 2px 8px; border-radius: 50px; font-size: 0.7rem; font-weight: 600; }
+
+/* ── Mobile Responsiveness ── */
+@media (max-width: 768px) {
+  .dashboard-container { padding: 1.5rem 4%; }
+  .dashboard-header { flex-direction: column; align-items: flex-start; margin-bottom: 2rem; }
+  .dashboard-header h2 { font-size: 1.6rem; }
+  .dashboard-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .stat-row { flex-wrap: wrap; gap: 1rem; }
+  .stat-num { font-size: 1.3rem; }
+  .class-item { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+  .class-item .btn-primary { width: 100%; }
+  .booking-list li { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .purchase-list li { font-size: 0.85rem; }
+  .plan-item { font-size: 0.85rem; }
+  .stat-card { flex-direction: column; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header h2 { font-size: 1.3rem; }
+  .profile-link span { display: none; }
+}
 </style>

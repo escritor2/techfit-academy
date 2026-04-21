@@ -61,6 +61,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
+import { marked } from 'marked'
 
 const authStore = useAuthStore()
 const notify = useNotificationStore()
@@ -71,40 +72,9 @@ const loading = ref(false)
 const result = ref('')
 const history = ref([])
 
-// Simple markdown to HTML converter
+// Using marked library for better markdown conversion
 function markdownToHtml(md) {
-  if (!md) return ''
-  let html = md
-    // Headers
-    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
-    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Blockquote
-    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    // Tables
-    .replace(/\|(.+)\|/g, (match) => {
-      const cells = match.split('|').filter(c => c.trim())
-      if (cells.every(c => /^[-:\s]+$/.test(c.trim()))) return '' // separator row
-      const tag = 'td'
-      const row = cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('')
-      return `<tr>${row}</tr>`
-    })
-    // Line breaks
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-
-  // Wrap in paragraphs
-  html = '<p>' + html + '</p>'
-  // Clean up empty paragraphs
-  html = html.replace(/<p><\/p>/g, '')
-  // Wrap table rows
-  html = html.replace(/(<tr>.*?<\/tr>)/gs, '<table class="workout-table">$1</table>')
-
-  return html
+  return marked(md || '')
 }
 
 const renderedContent = computed(() => markdownToHtml(result.value))

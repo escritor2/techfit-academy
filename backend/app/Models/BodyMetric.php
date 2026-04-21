@@ -6,36 +6,35 @@ use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Sale extends Model
+class BodyMetric extends Model
 {
     use BelongsToTenant;
 
     protected $fillable = [
         'tenant_id',
         'user_id',
-        'total_price',
-        'status',
+        'weight',
+        'height',
+        'body_fat',
+        'chest',
+        'waist',
+        'biceps',
+        'thigh',
+        'measured_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'total_price' => 'decimal:2',
+            'measured_at' => 'date',
+            'weight' => 'float',
+            'height' => 'float',
+            'body_fat' => 'float',
         ];
     }
 
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function items()
-    {
-        return $this->hasMany(SaleItem::class);
-    }
-
-    public function scopePaid($query)
-    {
-        return $query->where('status', 'paid');
     }
 }

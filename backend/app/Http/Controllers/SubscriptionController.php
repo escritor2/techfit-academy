@@ -73,11 +73,42 @@ class SubscriptionController extends Controller
     /**
      * Cancela assinatura.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
         $subscription = Subscription::findOrFail($id);
-        $subscription->update(['status' => 'cancelled']);
+        $subscription->delete();
+        return response()->json(['message' => 'Assinatura removida.']);
+    }
 
-        return response()->json(['message' => 'Assinatura cancelada com sucesso.']);
+    /**
+     * Checkout simulado para membros.
+     */
+    public function checkout(Request $request)
+    {
+        $request->validate([
+            'plan_id' => 'required|exists:plans,id',
+            'payment_method' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        $plan = \App\Models\Plan::find($request->plan_id);
+
+        // Cancela assinaturas ativas anteriores (opcional, dependendo da regra)
+        $user->subscriptions()->where('status', 'active')->update(['status' => 'expired']);
+
+        // Cria nova assinatura
+        $subscription = Subscription::create([
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'starts_at' => now(),
+            'ends_at' => now()->addDays($plan->duration_days),
+            'status' => 'active',
+            'price_paid' => $plan->price,
+        ]);
+
+        return response()->json([
+            'message' => 'Pagamento aprovado! Seu plano está ativo.',
+            'subscription' => $subscription
+        ]);
     }
 }

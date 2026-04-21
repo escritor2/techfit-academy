@@ -23,7 +23,13 @@ export const useCartStore = defineStore('cart', {
     addItem(product) {
       const existing = this.items.find(i => i.id === product.id)
       if (existing) {
-        existing.quantity++
+        if (existing.quantity < (product.stock_quantity || 99)) {
+          existing.quantity++
+        } else {
+          const notify = useNotificationStore()
+          notify.error('Limite de estoque atingido!')
+          return
+        }
       } else {
         this.items.push({
           id: product.id,

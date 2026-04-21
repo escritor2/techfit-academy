@@ -7,6 +7,7 @@ use App\Models\SaleItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SaleController extends Controller
 {
@@ -43,9 +44,9 @@ class SaleController extends Controller
                 $product = Product::findOrFail($item['product_id']);
 
                 if ($product->stock_quantity < $item['quantity']) {
-                    return response()->json([
-                        'message' => "Estoque insuficiente para: {$product->name}. Disponível: {$product->stock_quantity}"
-                    ], 422);
+                    throw ValidationException::withMessages([
+                        'items' => "Estoque insuficiente para: {$product->name}. Disponível: {$product->stock_quantity}"
+                    ]);
                 }
 
                 $subtotal = $product->price * $item['quantity'];

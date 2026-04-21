@@ -15,6 +15,11 @@ use App\Http\Controllers\PlanController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\ClassBookingController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\NutritionController;
+use App\Http\Controllers\MetricsController;
+use App\Http\Controllers\RankingController;
+use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\WebhookController;
 
 // ═══════════════════════════════════════════
 // ROTAS PÚBLICAS
@@ -31,6 +36,13 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/gym-classes', [GymClassController::class, 'index']);
 Route::get('/plans', [PlanController::class, 'index']);
+
+// ═══════════════════════════════════════════
+// WEBHOOKS DE PAGAMENTO (Públicas, sem auth)
+// ═══════════════════════════════════════════
+
+Route::post('/webhooks/stripe', [WebhookController::class, 'stripe']);
+Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago']);
 
 // ═══════════════════════════════════════════
 // ROTAS PROTEGIDAS (AUTH:SANCTUM)
@@ -53,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── IA / Treinos ──
     Route::post('/ai/generate-workout', [AIController::class, 'generateWorkout']);
+    Route::get('/ai/workout-status/{id}', [AIController::class, 'workoutStatus']);
     Route::get('/my/workouts', [AIController::class, 'myWorkouts']);
 
     // ── Aulas / Reservas ──
@@ -95,4 +108,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/subscriptions', [SubscriptionController::class, 'store']);
     Route::get('/admin/subscriptions/{id}', [SubscriptionController::class, 'show']);
     Route::delete('/admin/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
+    Route::post('/subscriptions/checkout', [SubscriptionController::class, 'checkout']);
+
+    // ── Métricas Corporais ──
+    Route::get('/metrics', [MetricsController::class, 'index']);
+    Route::post('/metrics', [MetricsController::class, 'store']);
+    Route::get('/metrics/history', [MetricsController::class, 'history']);
+
+    // ── Nutrição / Dieta ──
+    Route::post('/nutrition/generate', [NutritionController::class, 'generate']);
+    Route::get('/nutrition/latest', [NutritionController::class, 'latest']);
+
+    // ── Rankings & Conquistas ──
+    Route::get('/ranking/global', [RankingController::class, 'leaderboard']);
+    Route::get('/ranking/monthly', [RankingController::class, 'monthly']);
+    Route::get('/achievements', [AchievementController::class, 'myAchievements']);
+    Route::get('/achievements/all', [AchievementController::class, 'index']);
 });

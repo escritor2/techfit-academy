@@ -12,7 +12,9 @@
       </button>
     </div>
 
-    <div v-if="loading" class="loading-state text-muted">Carregando dados...</div>
+    <div v-if="loading" style="padding: 2rem 0;">
+      <SkeletonLoader variant="stat" :count="6" />
+    </div>
 
     <div v-else>
       <!-- ═══ TAB: DASHBOARD ═══ -->
@@ -46,15 +48,17 @@
 
         <div class="glass-card" style="margin-top: 2rem;">
           <h3>Últimos Cadastros</h3>
-          <table class="data-table" v-if="stats.recent_registrations && stats.recent_registrations.length > 0">
-            <thead><tr><th>Nome</th><th>Email</th><th>Data</th></tr></thead>
-            <tbody>
-              <tr v-for="user in stats.recent_registrations" :key="user.id">
-                <td>{{ user.name }}</td><td>{{ user.email }}</td>
-                <td>{{ new Date(user.created_at).toLocaleDateString('pt-BR') }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-container" v-if="stats.recent_registrations && stats.recent_registrations.length > 0">
+            <table class="data-table">
+              <thead><tr><th>Nome</th><th>Email</th><th>Data</th></tr></thead>
+              <tbody>
+                <tr v-for="user in stats.recent_registrations" :key="user.id">
+                  <td>{{ user.name }}</td><td>{{ user.email }}</td>
+                  <td>{{ new Date(user.created_at).toLocaleDateString('pt-BR') }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <p v-else class="text-muted" style="margin-top: 1rem;">Nenhum membro recente.</p>
         </div>
       </div>
@@ -65,22 +69,24 @@
           <input v-model="memberSearch" placeholder="🔍 Buscar por nome, email ou CPF..." class="search-input" @input="searchMembers" />
           <button class="btn-primary" @click="showMemberModal = true">+ Novo Membro</button>
         </div>
-        <table class="data-table" v-if="members.length > 0">
-          <thead><tr><th>Nome</th><th>Email</th><th>CPF</th><th>Check-ins</th><th>Plano</th><th>Ações</th></tr></thead>
-          <tbody>
-            <tr v-for="m in members" :key="m.id">
-              <td>{{ m.name }}</td><td>{{ m.email }}</td><td>{{ m.cpf || '-' }}</td>
-              <td>{{ m.checkins_count }}</td>
-              <td>
-                <span v-if="m.subscriptions && m.subscriptions.length > 0" class="badge active">{{ m.subscriptions[0].plan?.name }}</span>
-                <span v-else class="badge expired">Sem Plano</span>
-              </td>
-              <td>
-                <button class="action-btn delete" @click="deleteMember(m.id)" title="Remover">🗑️</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-container" v-if="members.length > 0">
+          <table class="data-table admin-table-mobile">
+            <thead><tr><th>Nome</th><th>Email</th><th>CPF</th><th>Check-ins</th><th>Plano</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr v-for="m in members" :key="m.id">
+                <td data-label="Nome">{{ m.name }}</td><td data-label="Email">{{ m.email }}</td><td data-label="CPF">{{ m.cpf || '-' }}</td>
+                <td data-label="Check-ins">{{ m.checkins_count }}</td>
+                <td>
+                  <span v-if="m.subscriptions && m.subscriptions.length > 0" class="badge active">{{ m.subscriptions[0].plan?.name }}</span>
+                  <span v-else class="badge expired">Sem Plano</span>
+                </td>
+                <td>
+                  <button class="action-btn delete" @click="deleteMember(m.id)" title="Remover">🗑️</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <p v-else class="text-muted" style="margin-top: 2rem; text-align: center;">Nenhum membro encontrado.</p>
 
         <!-- Modal Novo Membro -->
@@ -108,19 +114,21 @@
           <h3>Gerenciar Produtos</h3>
           <button class="btn-primary" @click="showProductModal = true">+ Novo Produto</button>
         </div>
-        <table class="data-table" v-if="products.length > 0">
-          <thead><tr><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ações</th></tr></thead>
-          <tbody>
-            <tr v-for="p in products" :key="p.id">
-              <td>{{ p.name }}</td><td>{{ p.category }}</td>
-              <td>R$ {{ formatMoney(p.price) }}</td>
-              <td>
-                <span :class="p.stock_quantity <= 5 ? 'text-warn' : ''">{{ p.stock_quantity }}</span>
-              </td>
-              <td><button class="action-btn delete" @click="deleteProduct(p.id)">🗑️</button></td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-container" v-if="products.length > 0">
+          <table class="data-table admin-table-mobile">
+            <thead><tr><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr v-for="p in products" :key="p.id">
+                <td data-label="Nome">{{ p.name }}</td><td data-label="Categoria">{{ p.category }}</td>
+                <td data-label="Preço">R$ {{ formatMoney(p.price) }}</td>
+                <td>
+                  <span :class="p.stock_quantity <= 5 ? 'text-warn' : ''">{{ p.stock_quantity }}</span>
+                </td>
+                <td><button class="action-btn delete" @click="deleteProduct(p.id)">🗑️</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <!-- Modal Novo Produto -->
         <div v-if="showProductModal" class="modal-overlay" @click.self="showProductModal = false">
@@ -182,18 +190,20 @@
           <h3>Gerenciar Aulas</h3>
           <button class="btn-primary" @click="showClassModal = true">+ Nova Aula</button>
         </div>
-        <table class="data-table" v-if="gymClasses.length > 0">
-          <thead><tr><th>Nome</th><th>Dia</th><th>Horário</th><th>Capacidade</th><th>Inscritos</th><th>Ações</th></tr></thead>
-          <tbody>
-            <tr v-for="c in gymClasses" :key="c.id">
-              <td>{{ c.name }}</td><td>{{ c.day_of_week }}</td>
-              <td>{{ c.start_time?.substring(0,5) }} - {{ c.end_time?.substring(0,5) }}</td>
-              <td>{{ c.capacity }}</td>
-              <td>{{ c.active_bookings_count || 0 }}</td>
-              <td><button class="action-btn delete" @click="deleteClass(c.id)">🗑️</button></td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-container" v-if="gymClasses.length > 0">
+          <table class="data-table">
+            <thead><tr><th>Nome</th><th>Dia</th><th>Horário</th><th>Capacidade</th><th>Inscritos</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr v-for="c in gymClasses" :key="c.id">
+                <td>{{ c.name }}</td><td>{{ c.day_of_week }}</td>
+                <td>{{ c.start_time?.substring(0,5) }} - {{ c.end_time?.substring(0,5) }}</td>
+                <td>{{ c.capacity }}</td>
+                <td>{{ c.active_bookings_count || 0 }}</td>
+                <td><button class="action-btn delete" @click="deleteClass(c.id)">🗑️</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <!-- Modal Nova Aula -->
         <div v-if="showClassModal" class="modal-overlay" @click.self="showClassModal = false">
@@ -228,6 +238,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useNotificationStore } from '../stores/notificationStore'
+import SkeletonLoader from '../components/SkeletonLoader.vue'
 
 const notify = useNotificationStore()
 const loading = ref(true)
@@ -456,4 +467,25 @@ onMounted(loadAll)
 }
 .modal-form textarea { min-height: 80px; resize: vertical; }
 .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* ── Mobile Responsiveness ── */
+@media (max-width: 768px) {
+  .dashboard-container { padding: 1.5rem 4%; }
+  .dashboard-header h2 { font-size: 1.8rem; }
+  .tab-bar { gap: 0.3rem; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 0.5rem; }
+  .tab-btn { font-size: 0.8rem; padding: 0.5rem 0.9rem; white-space: nowrap; flex-shrink: 0; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+  .stat-card { flex-direction: column; text-align: center; padding: 1rem !important; gap: 0.8rem; }
+  .stat-icon { font-size: 1.8rem; padding: 0.5rem; }
+  .stat-number { font-size: 1.4rem; }
+  .section-header { flex-direction: column; align-items: stretch; }
+  .search-input { max-width: 100%; }
+  .plans-grid { grid-template-columns: 1fr; }
+  .modal { width: 95%; max-height: 90vh; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .dashboard-header h2 { font-size: 1.5rem; }
+}
 </style>

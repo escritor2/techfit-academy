@@ -6,7 +6,7 @@ use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Workout extends Model
+class Diet extends Model
 {
     use BelongsToTenant;
 
@@ -14,13 +14,12 @@ class Workout extends Model
         'tenant_id',
         'user_id',
         'goal',
-        'level',
+        'daily_calories',
+        'protein_grams',
+        'carbs_grams',
+        'fats_grams',
         'content',
-        'status',
     ];
-
-    public function isPending(): bool { return $this->status === 'pending'; }
-    public function isReady(): bool   { return $this->status === 'ready'; }
 
     public function user()
     {

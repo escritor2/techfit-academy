@@ -1,5 +1,9 @@
 <template>
-  <nav class="nav-bar">
+  <div class="app-wrapper">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    
+    <nav class="nav-bar" v-if="!isLoginPage">
     <router-link to="/" class="logo-link">
       <div class="logo">TECH<span class="text-gradient">FIT</span></div>
     </router-link>
@@ -28,31 +32,41 @@
         <router-link v-if="authStore.isAdmin" to="/admin" exact-active-class="active" @click="menuOpen = false">Admin</router-link>
         <router-link v-if="authStore.isEmployee" to="/recepcao" exact-active-class="active" @click="menuOpen = false">Recepção</router-link>
         <router-link v-if="authStore.isMember" to="/painel" exact-active-class="active" @click="menuOpen = false">Meu Painel</router-link>
+        <router-link v-if="authStore.isMember" to="/nutricao" exact-active-class="active" @click="menuOpen = false">Nutrição</router-link>
+        <router-link v-if="authStore.isMember" to="/ranking" exact-active-class="active" @click="menuOpen = false">Ranking</router-link>
         
         <button @click="logout" class="btn-outline logout-btn">Sair</button>
       </template>
     </div>
   </nav>
 
-  <router-view></router-view>
+  <router-view v-slot="{ Component }">
+    <transition name="page-fade" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
 
   <!-- Global components -->
   <CartSidebar />
   <ToastNotification />
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from './stores/authStore'
 import { useCartStore } from './stores/cartStore'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import CartSidebar from './components/CartSidebar.vue'
 import ToastNotification from './components/ToastNotification.vue'
 
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const router = useRouter()
+const route = useRoute()
 const menuOpen = ref(false)
+
+const isLoginPage = computed(() => route.path === '/login')
 
 const logout = async () => {
   await authStore.logout()

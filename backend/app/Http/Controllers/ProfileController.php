@@ -55,15 +55,22 @@ class ProfileController extends Controller
             'email' => 'required|email|exists:users,email',
         ]);
 
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        try {
+            $status = Password::sendResetLink(
+                $request->only('email')
+            );
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return response()->json(['message' => 'Email de recuperação enviado! Verifique sua caixa de entrada.']);
+            if ($status === Password::RESET_LINK_SENT) {
+                return response()->json(['message' => 'Email de recuperação enviado! Verifique sua caixa de entrada.']);
+            }
+
+            return response()->json(['message' => 'Não foi possível enviar o email. Tente novamente.'], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao enviar email: ' . $e->getMessage(),
+                'debug' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
         }
-
-        return response()->json(['message' => 'Não foi possível enviar o email. Tente novamente.'], 422);
     }
 
     // Redefine a senha com o token do email
