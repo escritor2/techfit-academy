@@ -12,13 +12,10 @@ use App\Models\Checkin;
 use App\Models\Achievement;
 use App\Models\Tenant;
 use Carbon\Carbon;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
