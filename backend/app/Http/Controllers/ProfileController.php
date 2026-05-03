@@ -22,10 +22,7 @@ class ProfileController extends Controller
         $user->name = $request->name;
         $user->save();
 
-        return response()->json([
-            'message' => 'Perfil atualizado com sucesso!',
-            'user' => $user
-        ]);
+        return $this->success($user, 'Perfil atualizado com sucesso!');
     }
 
     // Altera senha do usuário autenticado
@@ -39,13 +36,13 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json(['message' => 'Senha atual incorreta.'], 422);
+            return $this->error('Senha atual incorreta.', 422);
         }
 
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        return response()->json(['message' => 'Senha alterada com sucesso!']);
+        return $this->success(null, 'Senha alterada com sucesso!');
     }
 
     // Envia email de recuperação de senha
@@ -61,15 +58,12 @@ class ProfileController extends Controller
             );
 
             if ($status === Password::RESET_LINK_SENT) {
-                return response()->json(['message' => 'Email de recuperação enviado! Verifique sua caixa de entrada.']);
+                return $this->success(null, 'Email de recuperação enviado! Verifique sua caixa de entrada.');
             }
 
-            return response()->json(['message' => 'Não foi possível enviar o email. Tente novamente.'], 422);
+            return $this->error('Não foi possível enviar o email. Tente novamente.', 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao enviar email: ' . $e->getMessage(),
-                'debug' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
+            return $this->error('Erro ao enviar email: ' . $e->getMessage(), 500);
         }
     }
 
@@ -91,9 +85,9 @@ class ProfileController extends Controller
         );
 
         if ($status === Password::PASSWORD_RESET) {
-            return response()->json(['message' => 'Senha redefinida com sucesso! Faça login com a nova senha.']);
+            return $this->success(null, 'Senha redefinida com sucesso! Faça login com a nova senha.');
         }
 
-        return response()->json(['message' => 'Token inválido ou expirado.'], 422);
+        return $this->error('Token inválido ou expirado.', 422);
     }
 }

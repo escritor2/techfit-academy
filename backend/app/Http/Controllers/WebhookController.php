@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Log;
 /**
  * Recebe eventos de gateways de pagamento (Stripe, Mercado Pago, etc.)
  * e atualiza o status de assinaturas automaticamente.
- *
- * Para ativar, configure PAYMENT_WEBHOOK_SECRET no .env com o signing secret
- * fornecido pelo seu gateway de pagamento.
  */
 class WebhookController extends Controller
 {
@@ -23,7 +20,12 @@ class WebhookController extends Controller
     {
         $secret = config('services.stripe.webhook_secret');
 
-        // Valida a assinatura do webhook se o secret estiver configurado
+        // Em produção, a assinatura DEVE ser obrigatória
+        if (app()->environment('production') && !$secret) {
+            Log::critical('Webhook Stripe: Secret não configurado em ambiente de produção!');
+            return response()->json(['error' => 'Configuration error'], 500);
+        }
+
         if ($secret) {
             $signature = $request->header('Stripe-Signature');
             if (!$this->verifyStripeSignature($request->getContent(), $signature, $secret)) {
@@ -53,14 +55,31 @@ class WebhookController extends Controller
      */
     public function mercadoPago(Request $request)
     {
+        $secret = config('services.mercadopago.webhook_secret');
+
+        // Validação básica de segurança para Mercado Pago (via x-signature ou token na URL)
+        if (app()->environment('production') && !$secret) {
+            Log::critical('Webhook MercadoPago: Secret não configurado em ambiente de produção!');
+            return response()->json(['error' => 'Configuration error'], 500);
+        }
+
+        if ($secret) {
+            $signature = $request->header('X-Signature');
+            // Nota: Mercado Pago v2 usa HMAC SHA256. 
+            // Aqui fazemos uma validação simplificada ou exigimos que o secret esteja presente.
+            if (!$signature) {
+                Log::warning('Webhook MercadoPago: X-Signature ausente.');
+                return response()->json(['error' => 'Forbidden'], 403);
+            }
+        }
+
         $event  = $request->all();
         $action = $event['action'] ?? 'unknown';
 
         Log::info("Webhook MercadoPago recebido: {$action}", $event);
 
-        // Aqui você integra com a API do MP para buscar os detalhes do pagamento
-        // $paymentId = $event['data']['id'] ?? null;
-        // Buscar status via SDK do MP...
+        // Processamento do evento MP...
+        // No mundo real, aqui buscaríamos os detalhes do pagamento via API para confirmar.
 
         return response()->json(['received' => true]);
     }
@@ -72,7 +91,6 @@ class WebhookController extends Controller
         $customerId = $event['data']['object']['customer'] ?? null;
         if (!$customerId) return;
 
-        // Ativa a assinatura do cliente correspondente
         Subscription::where('stripe_customer_id', $customerId)
             ->where('status', '!=', 'active')
             ->update(['status' => 'active']);
@@ -110,23 +128,28 @@ class WebhookController extends Controller
     {
         if (!$signature) return false;
 
-        $parts      = explode(',', $signature);
-        $timestamp  = null;
-        $signatures = [];
+        try {
+            $parts      = explode(',', $signature);
+            $timestamp  = null;
+            $signatures = [];
 
-        foreach ($parts as $part) {
-            [$key, $value] = explode('=', $part, 2);
-            if ($key === 't') $timestamp  = $value;
-            if ($key === 'v1') $signatures[] = $value;
-        }
+            foreach ($parts as $part) {
+                if (!str_contains($part, '=')) continue;
+                [$key, $value] = explode('=', $part, 2);
+                if ($key === 't') $timestamp  = $value;
+                if ($key === 'v1') $signatures[] = $value;
+            }
 
-        if (!$timestamp || empty($signatures)) return false;
+            if (!$timestamp || empty($signatures)) return false;
 
-        $signedPayload = "{$timestamp}.{$payload}";
-        $expected      = hash_hmac('sha256', $signedPayload, $secret);
+            $signedPayload = "{$timestamp}.{$payload}";
+            $expected      = hash_hmac('sha256', $signedPayload, $secret);
 
-        foreach ($signatures as $sig) {
-            if (hash_equals($expected, $sig)) return true;
+            foreach ($signatures as $sig) {
+                if (hash_equals($expected, $sig)) return true;
+            }
+        } catch (\Exception $e) {
+            Log::error("Erro ao verificar assinatura Stripe: " . $e->getMessage());
         }
 
         return false;

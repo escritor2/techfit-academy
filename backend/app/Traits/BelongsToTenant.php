@@ -12,16 +12,24 @@ trait BelongsToTenant
      */
     protected static function bootBelongsToTenant()
     {
+        \Log::info('BelongsToTenant: Booting for model ' . static::class);
+
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (session()->has('tenant_id')) {
-                $builder->where('tenant_id', session('tenant_id'));
+            // Se estiver no console (migrações, etc), não aplicamos o filtro global para evitar problemas
+            if (app()->runningInConsole()) {
+                return;
             }
+
+            $tenantId = session('tenant_id') ?? request()->attributes->get('tenant_id') ?? config('app.current_tenant_id') ?? 1;
+            
+            \Log::info('BelongsToTenant: Applying global scope for model ' . static::class . ' with tenant_id: ' . $tenantId);
+            $builder->where('tenant_id', $tenantId);
         });
 
         static::creating(function ($model) {
-            if (session()->has('tenant_id')) {
-                $model->tenant_id = session('tenant_id');
-            }
+            \Log::info('BelongsToTenant: Creating model ' . get_class($model));
+            $tenantId = session('tenant_id') ?? request()->attributes->get('tenant_id') ?? config('app.current_tenant_id') ?? 1;
+            $model->tenant_id = $tenantId;
         });
     }
 

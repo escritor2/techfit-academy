@@ -33,8 +33,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Define o tenant atual para que as models recebam o tenant_id via trait
-        session(['tenant_id' => $tenant->id]);
+        // Define o tenant atual para que as models recebam o tenant_id via trait (usando Singleton ou Request se necessário, mas no seeder vamos setar manualmente)
+        config(['app.current_tenant_id' => $tenant->id]);
 
         // ═══════════════════════════════════════
         // USUÁRIOS

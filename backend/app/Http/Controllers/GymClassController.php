@@ -12,6 +12,7 @@ class GymClassController extends Controller
      */
     public function index()
     {
+        \Log::info('GymClassController: Index called');
         $classes = GymClass::with('instructor:id,name')
             ->where('is_active', true)
             ->withCount(['activeBookings'])
@@ -23,6 +24,7 @@ class GymClassController extends Controller
                 return $class;
             });
 
+        \Log::info('GymClassController: Query finished, count: ' . $classes->count());
         return response()->json($classes);
     }
 

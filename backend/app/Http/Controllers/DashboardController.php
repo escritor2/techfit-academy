@@ -19,49 +19,33 @@ class DashboardController extends Controller
     public function getAdminData(Request $request)
     {
         if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return $this->unauthorized('Acesso negado.');
         }
 
         $today = Carbon::today();
         $now = Carbon::now();
 
-        $activeMembers = User::where('role', 'member')->count();
+        $data = [
+            'active_members'       => User::where('role', 'member')->count(),
+            'monthly_revenue'      => Sale::where('status', 'paid')
+                                        ->whereMonth('created_at', $now->month)
+                                        ->whereYear('created_at', $now->year)
+                                        ->sum('total_price'),
+            'total_sales'          => Sale::where('status', 'paid')->count(),
+            'today_checkins'       => Checkin::whereDate('checked_in_at', $today)->count(),
+            'active_plans'         => Subscription::active()->count(),
+            'total_classes'        => GymClass::where('is_active', true)->count(),
+            'expired_members'      => User::where('role', 'member')
+                                        ->whereDoesntHave('subscriptions', function ($q) {
+                                            $q->active();
+                                        })->count(),
+            'recent_registrations' => User::where('role', 'member')
+                                        ->orderBy('created_at', 'desc')
+                                        ->take(5)
+                                        ->get(),
+        ];
 
-        $monthlyRevenue = Sale::where('status', 'paid')
-            ->whereMonth('created_at', $now->month)
-            ->whereYear('created_at', $now->year)
-            ->sum('total_price');
-
-        $totalSales = Sale::where('status', 'paid')->count();
-
-        $todayCheckins = Checkin::whereDate('checked_in_at', $today)->count();
-
-        $activePlans = Subscription::active()->count();
-
-        $totalClasses = GymClass::where('is_active', true)->count();
-
-        $recentRegistrations = User::where('role', 'member')
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
-        // Membros com plano vencido
-        $expiredCount = User::where('role', 'member')
-            ->whereDoesntHave('subscriptions', function ($q) {
-                $q->active();
-            })
-            ->count();
-
-        return response()->json([
-            'active_members'       => $activeMembers,
-            'monthly_revenue'      => $monthlyRevenue,
-            'total_sales'          => $totalSales,
-            'today_checkins'       => $todayCheckins,
-            'active_plans'         => $activePlans,
-            'total_classes'        => $totalClasses,
-            'expired_members'      => $expiredCount,
-            'recent_registrations' => $recentRegistrations,
-        ]);
+        return $this->success($data);
     }
 
     /**
@@ -72,41 +56,29 @@ class DashboardController extends Controller
         $user = $request->user();
         $now = Carbon::now();
 
-        $recentPurchases = Sale::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
+        $data = [
+            'recent_purchases' => Sale::where('user_id', $user->id)
+                                    ->with('items.product')
+                                    ->orderBy('created_at', 'desc')
+                                    ->get(),
+            'subscription'     => $user->subscriptions()
+                                    ->active()
+                                    ->with('plan')
+                                    ->first(),
+            'latest_workout'   => $user->workouts()->first(),
+            'monthly_checkins' => Checkin::where('user_id', $user->id)
+                                    ->whereMonth('checked_in_at', $now->month)
+                                    ->whereYear('checked_in_at', $now->year)
+                                    ->count(),
+            'upcoming_bookings' => $user->classBookings()
+                                    ->where('status', 'booked')
+                                    ->with('gymClass')
+                                    ->latest()
+                                    ->take(5)
+                                    ->get(),
+        ];
 
-        // Subscription ativa
-        $subscription = $user->subscriptions()
-            ->active()
-            ->with('plan')
-            ->first();
-
-        // Último treino gerado
-        $latestWorkout = $user->workouts()->first();
-
-        // Check-ins do mês
-        $monthlyCheckins = Checkin::where('user_id', $user->id)
-            ->whereMonth('checked_in_at', $now->month)
-            ->whereYear('checked_in_at', $now->year)
-            ->count();
-
-        // Aulas reservadas
-        $upcomingBookings = $user->classBookings()
-            ->where('status', 'booked')
-            ->with('gymClass')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        return response()->json([
-            'recent_purchases'  => $recentPurchases,
-            'subscription'      => $subscription,
-            'latest_workout'    => $latestWorkout,
-            'monthly_checkins'  => $monthlyCheckins,
-            'upcoming_bookings' => $upcomingBookings,
-        ]);
+        return $this->success($data);
     }
 
     /**
@@ -116,39 +88,30 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         if (!in_array($user->role, ['employee', 'admin'])) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return $this->unauthorized('Acesso negado.');
         }
 
         $today = Carbon::today();
-        $now = Carbon::now();
 
-        // Check-ins de hoje
-        $todayCheckins = Checkin::whereDate('checked_in_at', $today)
-            ->with('user:id,name,cpf,email')
-            ->orderBy('checked_in_at', 'desc')
-            ->get();
+        $data = [
+            'today_checkins'   => Checkin::whereDate('checked_in_at', $today)
+                                    ->with('user:id,name,cpf,email')
+                                    ->orderBy('checked_in_at', 'desc')
+                                    ->get(),
+            'expired_members'  => User::where('role', 'member')
+                                    ->whereDoesntHave('subscriptions', function ($q) {
+                                        $q->active();
+                                    })
+                                    ->select('id', 'name', 'cpf', 'email')
+                                    ->take(10)
+                                    ->get(),
+            'today_sales'      => Sale::whereDate('created_at', $today)
+                                    ->where('status', 'paid')
+                                    ->sum('total_price'),
+        ];
 
-        // Membros com plano vencido
-        $expiredMembers = User::where('role', 'member')
-            ->whereDoesntHave('subscriptions', function ($q) {
-                $q->active();
-            })
-            ->select('id', 'name', 'cpf', 'email')
-            ->take(10)
-            ->get();
+        $data['total_entries'] = $data['today_checkins']->count();
 
-        // Vendas do dia
-        $todaySales = Sale::whereDate('created_at', $today)
-            ->where('status', 'paid')
-            ->sum('total_price');
-
-        $totalMembersToday = $todayCheckins->count();
-
-        return response()->json([
-            'today_checkins'   => $todayCheckins,
-            'expired_members'  => $expiredMembers,
-            'today_sales'      => $todaySales,
-            'total_entries'    => $totalMembersToday,
-        ]);
+        return $this->success($data);
     }
 }

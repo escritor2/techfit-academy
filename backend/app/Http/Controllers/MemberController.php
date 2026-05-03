@@ -13,10 +13,6 @@ class MemberController extends Controller
      */
     public function index(Request $request)
     {
-        if (!in_array($request->user()->role, ['admin', 'employee'])) {
-            return response()->json(['message' => 'Sem permissão.'], 403);
-        }
-
         $query = User::where('role', 'member');
 
         if ($request->filled('search')) {
@@ -43,10 +39,6 @@ class MemberController extends Controller
      */
     public function store(Request $request)
     {
-        if (!in_array($request->user()->role, ['admin', 'employee'])) {
-            return response()->json(['message' => 'Sem permissão.'], 403);
-        }
-
         $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
@@ -87,10 +79,6 @@ class MemberController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        if (!in_array($request->user()->role, ['admin', 'employee'])) {
-            return response()->json(['message' => 'Sem permissão.'], 403);
-        }
-
         $member = User::where('role', 'member')->findOrFail($id);
 
         $request->validate([
@@ -110,10 +98,6 @@ class MemberController extends Controller
      */
     public function destroy(string $id)
     {
-        if (request()->user()->role !== 'admin') {
-            return response()->json(['message' => 'Apenas admin pode remover membros.'], 403);
-        }
-
         $member = User::where('role', 'member')->findOrFail($id);
         $member->delete();
 

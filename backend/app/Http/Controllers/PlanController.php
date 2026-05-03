@@ -12,7 +12,10 @@ class PlanController extends Controller
      */
     public function index()
     {
-        return response()->json(Plan::orderBy('price')->get());
+        \Log::info('PlanController: Index called');
+        $plans = Plan::orderBy('price')->get();
+        \Log::info('PlanController: Query finished, count: ' . $plans->count());
+        return response()->json($plans);
     }
 
     /**

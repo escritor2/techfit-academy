@@ -22,7 +22,8 @@ class ProductController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        return response()->json($query->orderBy('name')->get());
+        $results = $query->orderBy('name')->get();
+        return $this->success($results);
     }
 
     /**
@@ -41,7 +42,7 @@ class ProductController extends Controller
 
         $product = Product::create($request->all());
 
-        return response()->json($product, 201);
+        return $this->success($product, 'Produto criado com sucesso', 201);
     }
 
     /**
@@ -49,7 +50,7 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        return response()->json(Product::findOrFail($id));
+        return $this->success(Product::findOrFail($id));
     }
 
     /**
@@ -70,7 +71,7 @@ class ProductController extends Controller
 
         $product->update($request->all());
 
-        return response()->json($product);
+        return $this->success($product, 'Produto atualizado com sucesso');
     }
 
     /**
@@ -81,6 +82,6 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         $product->delete();
 
-        return response()->json(['message' => 'Produto removido com sucesso.']);
+        return $this->success(null, 'Produto removido com sucesso.');
     }
 }
